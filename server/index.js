@@ -14,6 +14,8 @@ import privateRoute from "./config/authorization";
 import Welcome from "./routes/welcomeRoutes";
 import Auth from "./routes/auth";
 import User from "./routes/user";
+import Question from "./routes/question/questionRoutes";
+import Quiz from "./routes/quiz/quizRoutes";
 
 dotenv.config();
 privateRoute(passport);
@@ -42,6 +44,8 @@ app.get("/", (req, res) => {
 app.use("/api/v1/Welcome", Welcome);
 app.use("/api/v1/auth", Auth);
 app.use("/api/v1/user", User);
+app.use("/api/v1/question", Question);
+app.use("/api/v1/quiz", Quiz);
 
 app.listen(PORT, () => {
   ConnectDB()

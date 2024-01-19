@@ -6,8 +6,8 @@ const QuestionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    options: [{ type: mongoose.Types.ObjectId, ref: options }],
-    correctOption: { type: mongoose.Types.ObjectId, ref: options },
+    options: [{ type: mongoose.Types.ObjectId, ref: "option" }],
+    correctOption: { type: mongoose.Types.ObjectId, ref: "option" },
     language: { type: String, required: true },
     // difficulty : Easy , medium , hard
     difficulty: { type: String, required: true },

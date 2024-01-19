@@ -1,0 +1,250 @@
+import { AttemptedQuizModel } from "../../database/attemptedquiz";
+import { OptionModel } from "../../database/option";
+import { QuestionModel } from "../../database/question";
+import { QuizModel } from "../../database/quiz";
+export const welcomeQuiz = (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      message: "Welcome to quiz Routes.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: true,
+      message: "Welcome to Question Routes.",
+      error: error.message,
+    });
+  }
+};
+
+export const CreateQuiz = async (req, res) => {
+  try {
+    const { language } = req.body;
+
+    // Define the number of questions for each difficulty level
+    const numEasyQuestions = 7;
+    const numMediumQuestions = 2;
+    const numHardQuestions = 2;
+
+    // Fetch random easy, medium, and hard questions for the given language
+    const easyQuestions = await QuestionModel.aggregate([
+      { $match: { language, difficulty: "easy" } },
+      { $sample: { size: numEasyQuestions } },
+    ]);
+
+    const mediumQuestions = await QuestionModel.aggregate([
+      { $match: { language, difficulty: "medium" } },
+      { $sample: { size: numMediumQuestions } },
+    ]);
+
+    const hardQuestions = await QuestionModel.aggregate([
+      { $match: { language, difficulty: "hard" } },
+      { $sample: { size: numHardQuestions } },
+    ]);
+
+    // Combine the questions
+    const allQuestions = [
+      ...easyQuestions,
+      ...mediumQuestions,
+      ...hardQuestions,
+    ];
+
+    // Shuffle the combined questions
+    const shuffledQuestions = shuffleArray(allQuestions);
+    if (shuffledQuestions.length == 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Quiz not found for this language",
+      });
+    }
+    // Create a quiz with the shuffled questions
+    const newQuiz = await QuizModel.create({ questions: shuffledQuestions });
+    const quizQuestions = newQuiz.questions;
+
+    // When user started quiz then if not submitted the progress will be saved as pending
+    const attemptQuizData = {
+      userID: req.user,
+      quizId: newQuiz._id,
+      selectedAnswers: quizQuestions.map((questionID) => ({
+        questionId: questionID,
+        selectedOptionId: null, // You can update this with the actual selected option ID
+      })),
+      score: 0,
+      feedback: "You Started Quiz",
+      status: "pending",
+    };
+
+    const initializeQuiz = await AttemptedQuizModel.create(attemptQuizData);
+
+    // Fetch detailed information for each question in the quiz
+    const populatedQuestions = await Promise.all(
+      shuffledQuestions.map(async (question) => {
+        const questionDetails = await QuestionModel.findById(question._id);
+        const populatedOptions = await Promise.all(
+          question.options.map(async (option) => {
+            const optionDetails = await OptionModel.findById(option._id);
+            return {
+              optionID: optionDetails._id,
+              option: optionDetails.option,
+            };
+          })
+        );
+
+        return {
+          questionId: questionDetails._id,
+          question: questionDetails.question,
+          options: populatedOptions,
+          level: questionDetails.level,
+          difficulty: questionDetails.difficulty,
+          language: questionDetails.language,
+        };
+      })
+    );
+
+    const responsePayload = {
+      language,
+      // user: req.user,
+      quizID: newQuiz._id,
+      populatedQuestions,
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "quiz created successfully",
+      responsePayload,
+    });
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+// Shuffle array function
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+// quizData = {
+//   quizId: "your_quiz_id",
+//   userId: "user_id",
+//   answers: [
+//     { questionId: "question_id_1", selectedOptionId: "selected_option_id_1" },
+//     { questionId: "question_id_2", selectedOptionId: "selected_option_id_2" },
+//     // ... for each question
+//   ],
+// };
+
+// Function to calculate score for a given question and selected option
+const calculateScoreForQuestion = async (questionId, selectedOptionId) => {
+  try {
+    // Fetch the question document from the database
+    const question = await QuestionModel.findById(questionId);
+
+    if (!question) {
+      return { error: "Question not found" };
+    }
+
+    // Check if the selected option is correct
+    const isCorrect = question.correctOption.equals(selectedOptionId);
+
+    // Assign marks based on difficulty level
+    let marks = 0;
+    if (isCorrect) {
+      const difficulty = question.difficulty;
+      if (difficulty === "easy") {
+        marks = 2;
+      } else if (difficulty === "medium") {
+        marks = 3;
+      } else if (difficulty === "hard") {
+        marks = 5;
+      }
+    }
+
+    return { marks };
+  } catch (error) {
+    return { error: "Internal Server Error" };
+  }
+};
+
+export const SubmitQuiz = async (req, res) => {
+  try {
+    const { submittedQuiz } = req.body;
+    const { quizId, userId, answers } = submittedQuiz;
+
+    // Fetch the quiz document from the database and populate the 'questions' field
+    const quiz = await QuizModel.findById(quizId).populate("questions");
+
+    if (!quiz) {
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+
+    const quizQuestions = quiz.questions;
+
+    // Calculate the total score for the submitted quiz
+    let totalScore = 0;
+
+    for (const { questionId, selectedOptionId } of answers) {
+      const result = await calculateScoreForQuestion(
+        questionId,
+        selectedOptionId
+      );
+      if (result.error) {
+        return res.status(404).json(result);
+      }
+      totalScore += result.marks;
+    }
+
+    // Map the answers to match the AttemptedQuizModel's selectedAnswers structure
+    const mappedAnswers = answers.map(({ questionId, selectedOptionId }) => ({
+      questionId,
+      selectedOptionId,
+    }));
+
+    // Update the AttemptedQuizModel with the calculated score, selectedOptionId, and set status to "completed"
+    const updatedAttemptQuizDetails = await AttemptedQuizModel.findOneAndUpdate(
+      { quizId, userID: userId },
+      {
+        $set: {
+          selectedAnswers: mappedAnswers,
+          score: totalScore,
+          status: "completed",
+          feedback: `you have completed quiz successfully. You Scored : ${totalScore}`,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedAttemptQuizDetails) {
+      return res.status(404).json({ error: "Attempted quiz not found" });
+    }
+
+    const responsePayload = {
+      feedbackResponse: `Your Score is ${totalScore}`,
+    };
+    // Return the total score
+    res.status(200).json({
+      success: true,
+      message: "You submitted quiz Successfully",
+      responsePayload,
+    });
+
+    //  userId, quizId, totalScore, updatedAttemptQuizDetails
+    //  score calculate
+
+    // attempt quiz details update
+
+    // feedback to user
+
+    // res.status(200).json({
+    //   success: true,
+    //   quiz,
+    //   submittedQuiz,
+    // });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: error.message, message: "Internal Server Error" });
+  }
+};

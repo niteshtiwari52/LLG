@@ -4,6 +4,7 @@ const UserDetailSchema = new mongoose.Schema(
   {
     userID: {
       type: mongoose.Types.ObjectId,
+      ref: "user",
       required: true,
     },
     averageScore: {
@@ -18,7 +19,7 @@ const UserDetailSchema = new mongoose.Schema(
     attemptedQuiz: [
       {
         type: mongoose.Types.ObjectId,
-        ref: attemptedquizs,
+        ref: "attemptedquizs",
       },
     ],
   },

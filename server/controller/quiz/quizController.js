@@ -1,7 +1,9 @@
+import mongoose from "mongoose";
 import { AttemptedQuizModel } from "../../database/attemptedquiz";
 import { OptionModel } from "../../database/option";
 import { QuestionModel } from "../../database/question";
 import { QuizModel } from "../../database/quiz";
+import { UserDetailModel } from "../../database/userDetails";
 export const welcomeQuiz = (req, res) => {
   try {
     return res.status(200).json({
@@ -20,6 +22,7 @@ export const welcomeQuiz = (req, res) => {
 export const CreateQuiz = async (req, res) => {
   try {
     const { language } = req.body;
+    const userId = req.user;
 
     // Define the number of questions for each difficulty level
     const numEasyQuestions = 7;
@@ -61,6 +64,9 @@ export const CreateQuiz = async (req, res) => {
     const newQuiz = await QuizModel.create({ questions: shuffledQuestions });
     const quizQuestions = newQuiz.questions;
 
+    // update user details
+    // const userAttemptedNewQuiz = await UserDetailModel.fin;
+
     // When user started quiz then if not submitted the progress will be saved as pending
     const attemptQuizData = {
       userID: req.user,
@@ -75,6 +81,33 @@ export const CreateQuiz = async (req, res) => {
     };
 
     const initializeQuiz = await AttemptedQuizModel.create(attemptQuizData);
+    // Retrieve the latest attempted quiz for the user
+    const latestAttemptedQuiz = await AttemptedQuizModel.findOne({
+      userID: userId,
+      quizId: initializeQuiz.quizId,
+    })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    // Check if there is a latest attempted quiz
+    if (!latestAttemptedQuiz) {
+      return res.status(404).json({
+        succecs: false,
+        message: "No attempted quiz found for the user",
+      });
+    }
+
+    // Update the UserDetailModel with the extracted data
+    const result = await UserDetailModel.updateOne(
+      { userID: userId },
+      {
+        $push: {
+          attemptedQuiz: latestAttemptedQuiz._id, // Store only the ObjectId
+        },
+      }
+    );
+
+    // const updatedUserDetail = await UserDetailModel.findOne({ userID: userId });
 
     // Fetch detailed information for each question in the quiz
     const populatedQuestions = await Promise.all(
@@ -105,13 +138,16 @@ export const CreateQuiz = async (req, res) => {
       language,
       // user: req.user,
       quizID: newQuiz._id,
-      populatedQuestions,
+      quizQuestions: populatedQuestions,
     };
 
     res.status(200).json({
       success: true,
       message: "quiz created successfully",
       responsePayload,
+      // initializeQuiz,
+      // latestAttemptedQuiz,
+      // updatedUserDetail,
     });
   } catch (error) {
     res.status(500).send("Internal Server Error");
@@ -147,7 +183,8 @@ const calculateScoreForQuestion = async (questionId, selectedOptionId) => {
     }
 
     // Check if the selected option is correct
-    const isCorrect = question.correctOption.equals(selectedOptionId);
+    const isCorrect =
+      question.correctOption && question.correctOption.equals(selectedOptionId);
 
     // Assign marks based on difficulty level
     let marks = 0;
@@ -164,13 +201,14 @@ const calculateScoreForQuestion = async (questionId, selectedOptionId) => {
 
     return { marks };
   } catch (error) {
-    return { error: "Internal Server Error" };
+    return { error: error.message };
   }
 };
 
 export const SubmitQuiz = async (req, res) => {
   try {
     const { submittedQuiz } = req.body;
+
     const { quizId, userId, answers } = submittedQuiz;
 
     // Fetch the quiz document from the database and populate the 'questions' field
@@ -215,19 +253,81 @@ export const SubmitQuiz = async (req, res) => {
       },
       { new: true }
     );
+    let averageScore = 0;
+    let userDetailAverageScoreUpdate;
+    const allAttemptedQuizes = await AttemptedQuizModel.find({
+      userID: userId,
+    });
 
+    if (allAttemptedQuizes.length !== 0) {
+      // Calculate total score for all quizzes
+      const totalScore = allAttemptedQuizes.reduce(
+        (acc, quiz) => acc + quiz.score,
+        0
+      );
+      averageScore = totalScore / allAttemptedQuizes.length;
+
+      // leaderboard rank
+
+      userDetailAverageScoreUpdate = await UserDetailModel.findOneAndUpdate(
+        { userID: userId },
+        {
+          $set: {
+            averageScore: Math.floor(averageScore),
+            // leadeboard rank
+          },
+        },
+        { new: true }
+      );
+    }
+
+    // calculating rank
+    // Fetch all user details
+    const allUserDetails = await UserDetailModel.find().sort({
+      averageScore: "desc",
+      "attemptedQuiz.length": "desc", // Sorting by the number of attempted quizzes
+    });
+
+    // Find the index of the user in the sorted array
+    const userIndex = allUserDetails.findIndex(
+      (user) => user.userID.toString() === userId.toString()
+    );
+
+    // Calculate rank (1-based index)
+    const userRank = userIndex + 1;
+
+    // update the rank in userDetails
+    const finalUserDetailUpdate = await UserDetailModel.findOneAndUpdate(
+      { userID: userId },
+      {
+        $set: {
+          leaderboardRank: userRank,
+        },
+      },
+      { new: true }
+    );
     if (!updatedAttemptQuizDetails) {
       return res.status(404).json({ error: "Attempted quiz not found" });
     }
 
     const responsePayload = {
-      feedbackResponse: `Your Score is ${totalScore}`,
+      quizTotalScore: totalScore,
+      userAvergeScore: Math.floor(averageScore),
+      userRank: userRank,
     };
     // Return the total score
     res.status(200).json({
       success: true,
       message: "You submitted quiz Successfully",
       responsePayload,
+      // mappedAnswers,
+      // averageScoreResult,
+      // averageScore,
+      // userRank,
+      // totalAttemptQuizes: allAttemptedQuizes.length,
+      // updatedAttemptQuizDetails,
+      // allAttemptedQuizes,
+      // userDetailAverageScoreUpdate,
     });
 
     //  userId, quizId, totalScore, updatedAttemptQuizDetails
@@ -246,5 +346,36 @@ export const SubmitQuiz = async (req, res) => {
     res
       .status(500)
       .json({ error: error.message, message: "Internal Server Error" });
+  }
+};
+
+export const getAllAttemptedQuizes = async (req, res) => {
+  try {
+    const user = req.user;
+    const allAttemptedQuizes = await AttemptedQuizModel.find({
+      userID: user._id,
+    }).sort({ createdAt: -1 });
+    // .populate("quizId")
+    // .populate("selectedAnswers.questionId")
+    // .populate("selectedAnswers.selectedOptionId");
+    const allAttemptedQuizesData = allAttemptedQuizes.map(
+      (allquizes, index) => ({
+        userId: allquizes.userID,
+        quizNo: index + 1,
+        quizId: allquizes.quizId,
+        quizScore: allquizes.score,
+        quizStatus: allquizes.status,
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      allAttemptedQuizes: allAttemptedQuizesData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      succecs: false,
+      error: error.message,
+    });
   }
 };

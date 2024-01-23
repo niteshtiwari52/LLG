@@ -2,7 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import passport from "passport";
 import session from "express-session";
-
+import cors from "cors";
+import helmet from "helmet";
 // Database Connection import
 import ConnectDB from "./database/connection";
 
@@ -14,6 +15,7 @@ import privateRoute from "./config/authorization";
 import Welcome from "./routes/welcomeRoutes";
 import Auth from "./routes/auth";
 import User from "./routes/user";
+import Leaderboard from "./routes/leaderboard/leaderboardRoutes";
 import Question from "./routes/question/questionRoutes";
 import Quiz from "./routes/quiz/quizRoutes";
 
@@ -33,7 +35,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const PORT = 4000 || process.env.PORT;
-
+app.use(cors({ origin: "http://localhost:3000" }));
+app.use(helmet());
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -44,6 +47,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/Welcome", Welcome);
 app.use("/api/v1/auth", Auth);
 app.use("/api/v1/user", User);
+app.use("/api/v1/leaderboard", Leaderboard);
 app.use("/api/v1/question", Question);
 app.use("/api/v1/quiz", Quiz);
 

@@ -4,22 +4,23 @@ const AttemptedQuizSchema = new mongoose.Schema(
   {
     userID: {
       type: mongoose.Types.ObjectId,
+      ref: "user",
       required: true,
     },
     quizId: {
       type: mongoose.Types.ObjectId,
-      ref: "quizs",
+      ref: "quiz",
     },
     selectedAnswers: [
       {
         questionId: {
           type: mongoose.Types.ObjectId,
-          ref: "questions", // Replace with the actual reference name for your Question model
+          ref: "question", // Replace with the actual reference name for your Question model
           required: true,
         },
         selectedOptionId: {
           type: mongoose.Types.ObjectId,
-          ref: "options", // Replace with the actual reference name for your Option model
+          ref: "option", // Replace with the actual reference name for your Option model
           // required: true,
         },
       },

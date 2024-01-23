@@ -3,6 +3,7 @@ import passport from "passport";
 import {
   CreateQuiz,
   SubmitQuiz,
+  getAllAttemptedQuizes,
   welcomeQuiz,
 } from "../../controller/quiz/quizController";
 
@@ -19,6 +20,12 @@ Router.post(
   "/submit-quiz",
   passport.authenticate("jwt", { session: false }),
   SubmitQuiz
+);
+
+Router.get(
+  "/allattemptedquizes",
+  passport.authenticate("jwt", { session: false }),
+  getAllAttemptedQuizes
 );
 
 export default Router;

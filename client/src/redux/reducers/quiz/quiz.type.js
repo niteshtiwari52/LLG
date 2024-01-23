@@ -1,0 +1,7 @@
+export const QUIZ_CREATE = "QUIZ_CREATE";
+export const QUIZ_SUBMIT = "QUIZ_SUBMIT";
+export const QUIZ_FETCH = "QUIZ_FETCH";
+export const QUIZ_CREATE_CLEAR = "QUIZ_CREATE_CLEAR";
+export const QUIZ_SUBMIT_CLEAR = "QUIZ_SUBMIT_CLEAR";
+export const QUIZ_FETCH_CLEAR = "QUIZ_FETCH_CLEAR";
+export const QUIZ_CLEAR = "QUIZ_CLEAR";

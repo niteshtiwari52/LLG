@@ -57,6 +57,10 @@ UserSchema.statics.isUserExist = async ({ email }) => {
   const isEmailExist = await UserModel.findOne({ email });
 
   if (isEmailExist) {
+    // return res.status(404).json({
+    //   success: false,
+    //   message: "User already Exists...",
+    // });
     throw new Error("User already Exists....");
   }
 };
@@ -65,6 +69,10 @@ UserSchema.statics.findByEmailAndPassword = async ({ email, password }) => {
   const user = await UserModel.findOne({ email }).select("password");
 
   if (!user) {
+    // return res.status(404).json({
+    //   success: false,
+    //   message: "User does not Exists.... !",
+    // });
     throw new Error("User does not Exists.... !");
   }
 

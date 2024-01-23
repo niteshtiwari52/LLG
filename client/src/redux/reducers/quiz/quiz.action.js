@@ -7,12 +7,13 @@ import {
   QUIZ_SUBMIT,
   QUIZ_SUBMIT_CLEAR,
 } from "./quiz.type";
+const apiUrl = process.env.REACT_APP_API_URL;
 
 export const createNewQuizAction = (data) => async (dispatch) => {
   try {
     const newQuiz = await axios({
       method: "POST",
-      url: `http://localhost:4000/api/v1/quiz/create-quiz`,
+      url: `${apiUrl}/api/v1/quiz/create-quiz`,
       data: { ...data },
     });
 
@@ -27,7 +28,7 @@ export const submitQuizAction = (submittedQuiz) => async (dispatch) => {
     console.log(submittedQuiz);
     const submissionResult = await axios({
       method: "POST",
-      url: `http://localhost:4000/api/v1/quiz/submit-quiz`,
+      url: `${apiUrl}/api/v1/quiz/submit-quiz`,
       data: { submittedQuiz: submittedQuiz },
     });
 
@@ -41,7 +42,7 @@ export const fetchAllAttemptedQuizesAction = () => async (dispatch) => {
   try {
     const allAttemptedQuizesData = await axios({
       method: "GET",
-      url: `http://localhost:4000/api/v1/quiz/allattemptedquizes`,
+      url: `${apiUrl}/api/v1/quiz/allattemptedquizes`,
     });
     //   console.log(UserDetails.data);
     return dispatch({

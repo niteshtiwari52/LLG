@@ -34,8 +34,8 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const PORT = 4000 || process.env.PORT;
-app.use(cors({ origin: "http://localhost:3000" }));
+const PORT = process.env.PORT || 4000;
+app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(helmet());
 app.get("/", (req, res) => {
   res.status(200).json({

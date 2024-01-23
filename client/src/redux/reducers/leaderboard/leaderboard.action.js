@@ -1,11 +1,12 @@
 import axios from "axios";
 import { CLEAR_LEADERBOARD, FETCH_LEADERBOARD } from "./leaderboard.type";
+const apiUrl = process.env.REACT_APP_API_URL;
 
 export const leaderboardDetailsAction = () => async (dispatch) => {
   try {
     const LeaderboardDetails = await axios({
       method: "GET",
-      url: `http://localhost:4000/api/v1/leaderboard/userrank`,
+      url: `${apiUrl}/api/v1/leaderboard/userrank`,
     });
 
     return dispatch({

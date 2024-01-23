@@ -9,12 +9,13 @@ import {
   SIGN_OUT,
   SIGN_UP,
 } from "./auth.type";
+const apiUrl = process.env.REACT_APP_API_URL;
 
 export const signUpAction = (userData) => async (dispatch) => {
   try {
     const User = await axios({
       method: "POST",
-      url: `http://localhost:4000/api/v1/auth/signup`,
+      url: `${apiUrl}/api/v1/auth/signup`,
       data: { credentials: userData },
     });
 
@@ -34,7 +35,7 @@ export const signInAction = (userData) => async (dispatch) => {
     // console.log(Credential : userData)
     const User = await axios({
       method: "POST",
-      url: `http://localhost:4000/api/v1/auth/signin`,
+      url: `${apiUrl}/api/v1/auth/signin`,
       data: { credentials: userData },
     });
 

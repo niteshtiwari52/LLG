@@ -1,6 +1,7 @@
 import JwtPassport from "passport-jwt";
 import dotenv from "dotenv";
 import { UserModel } from "../database/allModels";
+
 dotenv.config();
 
 const JWTStrategy = JwtPassport.Strategy;

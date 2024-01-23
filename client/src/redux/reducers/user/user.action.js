@@ -1,11 +1,12 @@
 import axios from "axios";
 import { SELF, CLEAR_USER, GET_USER_DETAILS } from "./user.type";
+const apiUrl = process.env.REACT_APP_API_URL;
 
 export const getMyDetailsAction = () => async (dispatch) => {
   try {
     const User = await axios({
       method: "GET",
-      url: `http://localhost:4000/api/v1/user/`,
+      url: `${apiUrl}/api/v1/user/`,
     });
     // console.log(User);
     return dispatch({ type: SELF, payload: { ...User.data.user } });
@@ -18,7 +19,7 @@ export const getUserDetailsAction = () => async (dispatch) => {
   try {
     const UserDetails = await axios({
       method: "GET",
-      url: `http://localhost:4000/api/v1/user/userdetails`,
+      url: `${apiUrl}/api/v1/user/userdetails`,
     });
 
     return dispatch({

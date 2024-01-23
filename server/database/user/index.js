@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import bcrypt, { genSalt } from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const UserSchema = new mongoose.Schema(
   {
     fullname: {
@@ -25,7 +24,7 @@ const UserSchema = new mongoose.Schema(
 
 // Attachments : Genrating a JWT Token
 UserSchema.methods.generateJwtToken = function () {
-  return jwt.sign({ user: this._id.toString() }, JWT_SECRET);
+  return jwt.sign({ user: this._id.toString() }, process.env.JWT_SECRET);
 };
 
 //   Encrypting the user Password

@@ -30,7 +30,7 @@ const Signin = () => {
   // console.log(user);
 
   useEffect(() => {
-    console.log(user);
+    // console.log(user);
   }, [user]);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const Signin = () => {
       setFormData(initialData);
       dispatch(clearAuthErrorAction());
     } else {
-      return console.log("Sing in fails");
+      return;
     }
   }, [authResponse]);
   // Functions

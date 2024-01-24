@@ -30,20 +30,20 @@ const NewQuiz = () => {
     // Rest of your code
   }
   const [selectedLanguage, setSelectedLanguage] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizSubmitLoading, setQuizSubmitLoading] = useState(false);
   const [isInstructionRead, setIsInstructionRead] = useState(false);
   const [quizCreated, setQuizCreated] = useState(false);
   // const [selected, setSelected] = useState(plans[0]);
   const [selected, setSelected] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  // console.log(quizLoading);
+  // console.log(quizSubmitLoading);
 
   // initial Data for quiz submission
   const usersQuizAnswersInitialData = {
-    quizId:
-      quizDataFromStore && quizDataFromStore.responsePayload
-        ? quizDataFromStore.responsePayload.quizID
-        : "",
-    userId: user._id,
+    quizId: "",
+    userId: user ? user._id : "",
     answers: [],
   };
   const [usersQuizAnswers, setUsersQuizAnswers] = useState(
@@ -91,18 +91,17 @@ const NewQuiz = () => {
   };
 
   const launchQuiz = () => {
-    setLoading(true);
+    setQuizLoading(true);
     if (selectedLanguage != null) {
       setQuizCreated(true);
       const data = {
         language: selectedLanguage,
       };
       dispatch(createNewQuizAction(data));
-      setLoading(false);
     } else {
       alert("please select a language");
-      setLoading(false);
     }
+    setQuizLoading(false);
   };
   const handleNextQuestion = () => {
     if (currentQuestion < questionsArray.length - 1) {
@@ -147,7 +146,16 @@ const NewQuiz = () => {
     // if (usersQuizAnswers.answers.length < 11) {
     //   alert("please attempt all 11 questionns");
     // } else {
+    setQuizSubmitLoading(true);
+    setUsersQuizAnswers((prevSubmittedQuiz) => ({
+      ...prevSubmittedQuiz,
+      quizId:
+        quizDataFromStore && quizDataFromStore.success
+          ? quizDataFromStore.responsePayload.quizID
+          : alert("An Error Occured!!\nPlease Refresh your page"),
+    }));
     dispatch(submitQuizAction(usersQuizAnswers));
+    setQuizSubmitLoading(false);
     // }
   };
 
@@ -186,18 +194,25 @@ const NewQuiz = () => {
                     previous Question
                   </button> */}
                   <button
+                    disabled={quizSubmitLoading}
                     className="inline-block rounded border border-teal-700 bg-teal-600 px-12 py-3 text-sm font-medium text-white hover:bg-teal-700 hover:text-white"
                     onClick={submitQuiz}
                   >
-                    submit Quiz
+                    {quizSubmitLoading == true
+                      ? "Submitting...."
+                      : "submit Quiz"}
                   </button>
                   <button
+                    disabled={quizLoading}
                     className="inline-block flex rounded border border-teal-700 bg-teal-600 px-12 py-3 text-sm font-medium text-white hover:bg-teal-700 hover:text-white"
                     onClick={handleNextQuestion}
                   >
-                    Next Question{" "}
+                    {quizLoading ? "Loading ...." : "Next Question"}
+
                     <svg
-                      className="h-5 w-5 rtl:rotate-180"
+                      className={`h-5 ${
+                        quizLoading ? `hidden` : ``
+                      } w-5 rtl:rotate-180`}
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"

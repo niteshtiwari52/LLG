@@ -12,11 +12,11 @@ const Leaderboard = () => {
   useEffect(() => {
     dispatch(leaderboardDetailsAction());
   }, []);
-  useEffect(() => {
-    if (leaderboardData) {
-      console.log(leaderboardData.length);
-    }
-  }, [leaderboardData]);
+  // useEffect(() => {
+  //   if (leaderboardData) {
+  //     console.log(leaderboardData.length);
+  //   }
+  // }, [leaderboardData]);
 
   return (
     <>

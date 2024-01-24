@@ -46,7 +46,7 @@ const Signup = () => {
       dispatch(clearAuthErrorAction());
       navigate("/auth/signin");
     } else {
-      return console.log("Sign up  in fails");
+      return;
     }
   }, [authResponse]);
 

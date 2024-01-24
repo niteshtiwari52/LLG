@@ -86,7 +86,7 @@ A Language Learning Game is platform wher user can learn Languages and practice 
 
 ## Documentation
 
-Documentation for  [sample Data](https://documenter.getpostman.com/view/23029976/2s9Yynn4Yj)
+Documentation for sample Data using [Postman](https://documenter.getpostman.com/view/23029976/2s9Yynn4Yj)
 
 
 ## Demo
